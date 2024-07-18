@@ -7,10 +7,15 @@ import com.illusivesoulworks.diet.common.data.group.DietGroups;
 import com.illusivesoulworks.diet.common.util.DietResult;
 import com.typesafe.config.Config;
 import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
+import net.minecraft.tag.ItemTags;
+import net.minecraft.tag.TagKey;
+import net.minecraft.util.Identifier;
 import net.minecraft.util.registry.Registry;
 import org.spongepowered.asm.mixin.Mixin;
 
+import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
@@ -21,19 +26,20 @@ import java.util.*;
 
 @Mixin(value = DietApiImpl.class, remap = false)
 public abstract class DietApiImplMixin {
+    private static Config FOOD_VALUES = CONFIG.getConfig("foodValues");
+    private static Config FOOD_TAGS_VALUES = CONFIG.getConfig("foodTagsValues");
+
     @Inject(method = "get(Lnet/minecraft/entity/player/PlayerEntity;Lnet/minecraft/item/ItemStack;)Lcom/illusivesoulworks/diet/api/type/IDietResult;", at = @At("HEAD"), cancellable = true)
     private void onGet(PlayerEntity player, ItemStack input, CallbackInfoReturnable<IDietResult> cir) {
-        Config foodValues = CONFIG.getConfig("foodValues");
-        String escapedId = "\"%s\"".formatted(Registry.ITEM.getId(input.getItem()).toString());
-        if (!foodValues.hasPath(escapedId)) {
-            cir.setReturnValue(new DietResult(new HashMap<>()));
-            return;
-        }
-        Config food = foodValues.getConfig(escapedId);
-        Set<IDietGroup> groups =  DietGroups.getGroups(player.getWorld());
-
         HashMap<IDietGroup, Float> diet = new HashMap<>();
 
+        Config food = getFoodValues(input);
+        if (food == null) {
+            cir.setReturnValue(new DietResult(diet));
+            return;
+        }
+
+        Set<IDietGroup> groups =  DietGroups.getGroups(player.getWorld());
         for (IDietGroup group : groups) {
             if (!food.hasPath(group.getName())) {
                 continue;
@@ -47,8 +53,22 @@ public abstract class DietApiImplMixin {
     // Since we are not using the default diet system, we can cancel the calculation of the diet just to be sure that it won't interfere with our custom diet system
     @Inject(method = "calculate", at = @At("HEAD"), cancellable = true)
     private static void onCalculate(float healing, float saturation, Set<IDietGroup> groups, CallbackInfoReturnable<Map<IDietGroup, Float>> cir) {
-
         cir.setReturnValue(new HashMap<>());
+    }
+
+    @Unique
+    private static Config getFoodValues(ItemStack itemStack) {
+        String escapedId = "\"%s\"".formatted(Registry.ITEM.getId(itemStack.getItem()).toString());
+        if (FOOD_VALUES.hasPath(escapedId)) {
+            return FOOD_VALUES.getConfig(escapedId);
+        }
+
+        var stream = FOOD_TAGS_VALUES.entrySet().stream().filter(ConfigValueEntry ->
+            itemStack.isIn(TagKey.of(Registry.ITEM.getKey(), Identifier.tryParse(ConfigValueEntry.getKey())))
+        ).findFirst();
+
+        return stream.map(stringConfigValueEntry -> CONFIG.getConfig("foodTagsValues").getConfig(stringConfigValueEntry.getKey())).orElse(null);
+
     }
 
 }
