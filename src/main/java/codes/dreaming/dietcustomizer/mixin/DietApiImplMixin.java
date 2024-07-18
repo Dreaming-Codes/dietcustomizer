@@ -24,7 +24,7 @@ import java.util.*;
 
 @Mixin(value = DietApiImpl.class, remap = false)
 public abstract class DietApiImplMixin {
-    @Inject(method = "get(Lnet/minecraft/entity/player/PlayerEntity;Lnet/minecraft/item/ItemStack;)Lcom/illusivesoulworks/diet/api/type/IDietResult;", at = @At("HEAD"), cancellable = true)
+    @Inject(method = "get*", at = @At("HEAD"), cancellable = true)
     private void onGet(PlayerEntity player, ItemStack input, CallbackInfoReturnable<IDietResult> cir) {
         HashMap<IDietGroup, Float> diet = new HashMap<>();
 
