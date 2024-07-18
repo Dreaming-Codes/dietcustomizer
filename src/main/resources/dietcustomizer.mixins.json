@@ -4,6 +4,7 @@
   "package": "codes.dreaming.dietcustomizer.mixin",
   "compatibilityLevel": "JAVA_17",
   "mixins": [
+    "DietApiImplMixin"
   ],
   "injectors": {
     "defaultRequire": 1

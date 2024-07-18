@@ -8,22 +8,19 @@
   "contact": {},
   "license": "MIT",
   "icon": "assets/dietcustomizer/icon.png",
-  "environment": "server",
+  "environment": "*",
   "entrypoints": {
     "main": [
       "codes.dreaming.dietcustomizer.DietCustomizer"
     ]
   },
   "mixins": [
-    "dietcustomizer.mixins.json",
-    {
-      "config": "dietcustomizer.client.mixins.json",
-      "environment": "client"
-    }
+    "dietcustomizer.mixins.json"
   ],
   "depends": {
     "fabricloader": ">=${loader_version}",
     "fabric": "*",
-    "minecraft": "${minecraft_version}"
+    "minecraft": "${minecraft_version}",
+    "diet": "*"
   }
 }
