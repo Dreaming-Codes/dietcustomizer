@@ -7,9 +7,7 @@ import com.illusivesoulworks.diet.common.data.group.DietGroups;
 import com.illusivesoulworks.diet.common.util.DietResult;
 import com.typesafe.config.Config;
 import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
-import net.minecraft.tag.ItemTags;
 import net.minecraft.tag.TagKey;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.registry.Registry;
@@ -26,9 +24,6 @@ import java.util.*;
 
 @Mixin(value = DietApiImpl.class, remap = false)
 public abstract class DietApiImplMixin {
-    private static Config FOOD_VALUES = CONFIG.getConfig("foodValues");
-    private static Config FOOD_TAGS_VALUES = CONFIG.getConfig("foodTagsValues");
-
     @Inject(method = "get(Lnet/minecraft/entity/player/PlayerEntity;Lnet/minecraft/item/ItemStack;)Lcom/illusivesoulworks/diet/api/type/IDietResult;", at = @At("HEAD"), cancellable = true)
     private void onGet(PlayerEntity player, ItemStack input, CallbackInfoReturnable<IDietResult> cir) {
         HashMap<IDietGroup, Float> diet = new HashMap<>();
@@ -58,12 +53,15 @@ public abstract class DietApiImplMixin {
 
     @Unique
     private static Config getFoodValues(ItemStack itemStack) {
+        Config foodValues = CONFIG.getConfig("foodValues");
+        Config foodTagsValues = CONFIG.getConfig("foodTagsValues");
+
         String escapedId = "\"%s\"".formatted(Registry.ITEM.getId(itemStack.getItem()).toString());
-        if (FOOD_VALUES.hasPath(escapedId)) {
-            return FOOD_VALUES.getConfig(escapedId);
+        if (foodValues.hasPath(escapedId)) {
+            return foodValues.getConfig(escapedId);
         }
 
-        var stream = FOOD_TAGS_VALUES.entrySet().stream().filter(ConfigValueEntry ->
+        var stream = foodTagsValues.entrySet().stream().filter(ConfigValueEntry ->
             itemStack.isIn(TagKey.of(Registry.ITEM.getKey(), Identifier.tryParse(ConfigValueEntry.getKey())))
         ).findFirst();
 
